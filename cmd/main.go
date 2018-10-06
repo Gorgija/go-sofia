@@ -13,30 +13,52 @@ import (
 func main() {
 	log.Print("Server runing ...")
 
-	blPort := os.Getenv("PORT")
+	blPort := os.Getenv("APP_PORT")
 
-	if len(blPort) > 0 {
+	if len(blPort) == 0 {
 		log.Fatal("The application port should be set")
 	}
 
 	diagPort := os.Getenv("DIAG_PORT")
 
-	if len(diagPort) > 0 {
+	if len(diagPort) == 0 {
 		log.Fatal("The diagnostics port should be set")
 	}
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", hello)
+
+	possibleErrors := make(chan error, 2)
+
 	go func() {
-		err := http.ListenAndServe(":8080", router)
+		log.Print("Application server is listyening ....")
+
+		server := &http.Server{
+			Addr:    ":" + blPort,
+			Handler: router,
+		}
+
+		err := server.ListenAndServe()
+
+		if err != nil {
+			possibleErrors <- err
+		}
+
+	}()
+
+	go func() {
+
+		diagnostics := diagnostics.NewDiagnostics()
+		log.Print("Diagnostics server is listyening ....")
+		err := http.ListenAndServe(":"+diagPort, diagnostics)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 	}()
-	diagnostics := diagnostics.NewDiagnostics()
-	err := http.ListenAndServe(":8585", diagnostics)
-	if err != nil {
+
+	select {
+	case err := <-possibleErrors:
 		log.Fatal(err)
 	}
 }
