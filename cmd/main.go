@@ -10,6 +10,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type serverConf struct {
+	port   string
+	router http.Handler
+	name   string
+}
+
 func main() {
 	log.Print("Server runing ...")
 
@@ -29,6 +35,36 @@ func main() {
 	router.HandleFunc("/", hello)
 
 	possibleErrors := make(chan error, 2)
+
+	diagnostics := diagnostics.NewDiagnostics()
+
+	servers := []serverConf{
+		{
+			port:   blPort,
+			router: router,
+			name:   "application server",
+		},
+		{
+
+			port:   diagPort,
+			router: diagnostics,
+			name:   "diagnostics server",
+		},
+	}
+
+	for _, c := range servers {
+		go func(conf serverConf) {
+			log.Printf("The %s is preparing to handle connections...", conf.name)
+			server := &http.Server{
+				Addr:    ":" + conf.port,
+				Handler: conf.router,
+			}
+			err := server.ListenAndServe()
+			if err != nil {
+				possibleErrors <- err
+			}
+		}(c)
+	}
 
 	go func() {
 		log.Print("Application server is listyening ....")
