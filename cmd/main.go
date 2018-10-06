@@ -10,12 +10,9 @@ import (
 )
 
 func main() {
-
 	log.Print("Server runing ...")
-
 	router := mux.NewRouter()
 	router.HandleFunc("/", hello)
-
 	go func() {
 		err := http.ListenAndServe(":8080", router)
 		if err != nil {
@@ -23,14 +20,11 @@ func main() {
 		}
 
 	}()
-
 	diagnostics := diagnostics.NewDiagnostics()
-
 	err := http.ListenAndServe(":8585", diagnostics)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
