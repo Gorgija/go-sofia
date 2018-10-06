@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Gorgija/go-sofia/internal/diagnostics"
 	"github.com/gorilla/mux"
@@ -11,6 +12,19 @@ import (
 
 func main() {
 	log.Print("Server runing ...")
+
+	blPort := os.Getenv("PORT")
+
+	if len(blPort) > 0 {
+		log.Fatal("The application port should be set")
+	}
+
+	diagPort := os.Getenv("DIAG_PORT")
+
+	if len(diagPort) > 0 {
+		log.Fatal("The diagnostics port should be set")
+	}
+
 	router := mux.NewRouter()
 	router.HandleFunc("/", hello)
 	go func() {
